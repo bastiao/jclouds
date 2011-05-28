@@ -101,7 +101,7 @@
         </snapshotRepository>
         <site>
             <id>jclouds-googlecode-site</id>
-            <url>dav+https://jclouds.googlecode.com/svn/maven-sites/${project.version}</url>
+            <url>${maven.site.url.base}/${project.version}</url>
         </site>
     </distributionManagement>
 
@@ -179,6 +179,7 @@
         <maven.compile.target>1.6</maven.compile.target>
         <maven.compile.optimize>true</maven.compile.optimize>
         <maven.compile.deprecation>true</maven.compile.deprecation>
+        <maven.site.url.base>davs://jclouds.googlecode.com/svn/maven-sites</maven.site.url.base>
         <http.proxyHost />
         <http.proxyPort />
         <jclouds.blobstore.httpstream.url>http://mirror.cloudera.com/apache/maven/binaries/apache-maven-2.2.1-bin.tar.bz2</jclouds.blobstore.httpstream.url>
@@ -370,7 +371,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.7</version>
+                <version>2.8</version>
                 <executions>
                     <execution>
                         <id>javadoc</id>
@@ -508,7 +509,7 @@ pageTracker._trackPageview();
                         <dependency>
                             <groupId>org.apache.maven.wagon</groupId>
                             <artifactId>wagon-webdav-jackrabbit</artifactId>
-                            <version>1.0-beta-8-WAGON-319</version>
+                            <version>1.0-beta-8-WAGON-319.328</version>
                         </dependency>
                     </dependencies>
                 </plugin>
@@ -524,6 +525,17 @@ pageTracker._trackPageview();
                     <artifactId>maven-release-plugin</artifactId>
                     <version>2.1</version>
                 </plugin>                
+                <plugin>
+                    <groupId>org.apache.felix</groupId>
+                    <artifactId>maven-bundle-plugin</artifactId>
+                    <version>2.3.4</version>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <instructions>
+                            <_nouses>true</_nouses>
+                        </instructions>
+                    </configuration>
+                </plugin>
             </plugins>            
         </pluginManagement>
     </build>
@@ -683,6 +695,39 @@ pageTracker._trackPageview();
             </dependencies>
         </profile>
         <profile>
+            <id>site</id>
+            <build>
+                <plugins>
+                    <!-- disable the Maven enforcer plugin and prevent forking (unlike -Denforcer.skip) -->
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <version>1.0-beta-1</version>
+                        <executions>
+                            <execution>
+                                <id>enforce-banned-dependencies</id>
+                                <phase>none</phase>
+                            </execution>
+                            <execution>
+                                <id>enforce-java</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <phase>none</phase>
+                            </execution>
+                            <!-- inherited from oss-parent -->
+                            <execution>
+                                <id>enforce-maven</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>maven-2</id>
             <activation>
                 <file>
@@ -731,7 +776,7 @@ pageTracker._trackPageview();
                     </plugin>
                     <plugin>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>2.6.1</version>
+                        <version>2.8</version>
                         <configuration>
                             <encoding>${project.build.sourceEncoding}</encoding>
                             <quiet>true</quiet>
@@ -740,6 +785,7 @@ pageTracker._trackPageview();
                             <reportSet>
                                 <id>default</id>
                                 <reports>
+                                    <report>javadoc</report>
                                     <report>aggregate</report>
                                 </reports>
                             </reportSet>
@@ -789,7 +835,7 @@ pageTracker._trackPageview();
                     <plugins>
                         <plugin>
                             <artifactId>maven-site-plugin</artifactId>
-                            <version>3.0-beta-3</version>
+                            <version>3.0-beta-4-SNAPSHOT</version>
                             <configuration>
                                 <reportPlugins>
                                     <plugin>
@@ -810,15 +856,17 @@ pageTracker._trackPageview();
                                     </plugin>
                                     <plugin>
                                         <artifactId>maven-javadoc-plugin</artifactId>
-                                        <version>2.7</version>
+                                        <version>2.8</version>
                                         <configuration>
                                             <encoding>${project.build.sourceEncoding}</encoding>
                                             <quiet>true</quiet>
+                                            <additionalJOption>-J-Xmx256m</additionalJOption>
                                         </configuration>
                                         <reportSets>
                                             <reportSet>
                                                 <id>default</id>
                                                 <reports>
+                                                    <report>javadoc</report>
                                                     <report>aggregate</report>
                                                 </reports>
                                             </reportSet>
@@ -874,7 +922,15 @@ pageTracker._trackPageview();
                     <!-- only in the jclouds-project module -->
                     <exists>src/etc/header.txt</exists>
                 </file>
-            </activation>        
+            </activation>
+
+            <!-- Maven generates incorrect links without the <site> declaration here -->
+            <distributionManagement>
+                <site>
+                    <id>jclouds-googlecode-site</id>
+                    <url>${maven.site.url.base}/${project.version}/${project.artifactId}</url>
+                </site>
+            </distributionManagement>
             <build>
                 <plugins>
                    <plugin>      
